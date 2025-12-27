@@ -28,10 +28,12 @@ jobs:
       - name: Build samloader binary
         run: |
           pyinstaller \
-            --onefile \
-            --clean \
-            --name samloader \
-            samloader/__main__.py
+          --onefile \
+          --clean \
+          --name samloader \
+          --collect-submodules samloader \
+          -m samloader
+
 
       - name: Make executable
         run: chmod +x dist/samloader
