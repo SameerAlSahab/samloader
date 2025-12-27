@@ -4,12 +4,12 @@ on:
   push:
     branches: [ main, master ]
   pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,28 +18,35 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+          cache: 'pip' # Speeds up subsequent runs
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
+          # Install the package and its requirements
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install .
 
       - name: Build samloader binary
         run: |
+          # We point pyinstaller directly to the __main__.py file 
+          # which is the standard entry point for the samloader module.
           pyinstaller \
-          --onefile \
-          --clean \
-          --name samloader \
-          --collect-submodules samloader \
-          -m samloader
+            --onefile \
+            --clean \
+            --name samloader \
+            --collect-submodules samloader \
+            samloader/__main__.py
 
-
-      - name: Make executable
-        run: chmod +x dist/samloader
+      - name: Verify and Prepare Artifact
+        run: |
+          ls -l dist/
+          chmod +x dist/samloader
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: samloader-linux-x86_64
           path: dist/samloader
+          if-no-files-found: error
